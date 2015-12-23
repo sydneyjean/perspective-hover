@@ -9,7 +9,7 @@ Dependencies: Velocity.js (https://github.com/julianshapiro/velocity)
 TO DO:
 - change for loop of parent/els to use a higher order function
 - change function from accepting parameters to having an options object that overwrites defaults 
-- implement requestAnimationFrame so plugin isn't dependent on velocity
+- implement requestAnimationFrame so plugin isn't dependent on velocity (code based on http://www.sitepoint.com/simple-animations-using-requestanimationframe/)
 
 */
 
