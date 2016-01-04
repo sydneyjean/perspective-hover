@@ -7,9 +7,10 @@ Inspired by:  http://www.kikk.be/2015/
 Dependencies: Velocity.js (https://github.com/julianshapiro/velocity)
 
 TO DO:
-- change for loop of parent/els to use a higher order function
-- change function from accepting parameters to having an options object that overwrites defaults 
+- change for loop of parent/els to use a higher order function (??)
+- change function from accepting parameters to having an options object that overwrites defaults
 - implement requestAnimationFrame so plugin isn't dependent on velocity (code based on http://www.sitepoint.com/simple-animations-using-requestanimationframe/)
+  by using the values returned in getTransforms to animate back to 0 in this.reset
 
 */
 
@@ -21,7 +22,6 @@ function perspectiveHover(el, parent, intensity) {
         parent       = document.getElementsByClassName(parentClass),
         els          = document.getElementsByClassName(elClass);
 
-    
     this.perspective = function(e, el) {
         
         var elX      = el.getBoundingClientRect().left,
@@ -40,15 +40,16 @@ function perspectiveHover(el, parent, intensity) {
 
     }
 
-    this.reset = function(el, valX) {
+    this.reset = function(el, valX, valY) {
 
+        // start implementation of request animation frame
         console.log(valX);
 
         animate({
-            time: 0.5,  //time in seconds
+            time: 1,  // time in seconds
             run: function(rate) {
-                // console.log(rate);
-                // el.style.transform = 'rotateX('+ rate +'deg) rotateY('+ rate +'deg)';
+                console.log(rate);
+                el.style.transform = 'rotateX('+ rate*valX +'deg) rotateY('+ rate*valY +'deg)';
             }
         });
 
@@ -75,17 +76,36 @@ function perspectiveHover(el, parent, intensity) {
             }
             step();
         }
+        // end implementation of request animation frame
 
         // Velocity(el, { rotateX: 0, rotateY: 0, }, 250, [0.175, 0.85, 0.55, 1.2]); // Array vals are easing
     }
 
-    this.getTransforms = function(string, index) {
-        var regExp = /\(([^)]+)\)/;
-        var matches = string.match(regExp);
+    this.getTransforms = function(el) {
 
-        //matches[1] contains the value between the parentheses
-        // console.log(matches[1]);
-        console.log( matches );
+        var st      = window.getComputedStyle(el, null),
+            tr      = st.getPropertyValue("transform"),
+            matrix  = st.getPropertyValue("transform"),
+            rotateX = 0,
+            rotateY = 0,
+            rotateZ = 0;
+
+        if (matrix !== 'none') {
+
+            // calculate the values of the rotation
+            var values      = matrix.split('(')[1].split(')')[0].split(','),
+                pi          = Math.PI,
+                sinB        = parseFloat(values[8]),
+                b           = Math.asin(sinB) * 180 / pi,
+                cosB        = Math.cos(b * pi / 180),
+                matrixVal10 = parseFloat(values[9]),
+                a           = Math.asin(-matrixVal10 / cosB) * 180 / pi,
+                rotateX = a;
+                rotateY = b;
+
+            return [rotateX, rotateY];
+        }
+
     }
 
     for (var i = 0; i < parent.length; i++) {
@@ -101,12 +121,12 @@ function perspectiveHover(el, parent, intensity) {
     for (var i = 0; i < els.length; i++ ) {
 
         els[i].addEventListener('mouseleave', function(){
-            // the issue here is that we are presented with a string as opposed to values
-            self.getTransforms(this.style.transform);
+            // pass the x transform and y transform to reset, to animate back to 0
+            self.reset(this, self.getTransforms(this)[0], self.getTransforms(this)[1]);
         });
 
     }
     
 }
 
-perspectiveHover('.js-perspective-card', '.js-perspective', 15);
+perspectiveHover('.js-perspective-card', '.js-perspective', 10);
