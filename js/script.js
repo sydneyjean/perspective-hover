@@ -1,54 +1,49 @@
-/*
-
-A Vanilla JS plugin to add a sweet perspective hover affect to card-like elements
+/* 
+An almost vanilla JS function to add a sweet perspective hover affect to card-like elements
 
 Created by:   Sydney Hake
 Inspired by:  http://www.kikk.be/2015/
-Dependencies: Velocity.js (https://github.com/julianshapiro/velocity)
+Dependencies: jQuery
 
 TO DO:
 - change for loop of parent/els to use a higher order function (??)
 - change function from accepting parameters to having an options object that overwrites defaults
-- implement requestAnimationFrame so plugin isn't dependent on velocity (code based on http://www.sitepoint.com/simple-animations-using-requestanimationframe/)
-  by using the values returned in getTransforms to animate back to 0 in this.reset
 
 */
 
 function perspectiveHover(el, parent, intensity) {
-    
+
     var self         = this,
         elClass      = el.replace(/\./g,''),
         parentClass  = parent.replace(/\./g,''),
         parent       = document.getElementsByClassName(parentClass),
+        $parent      = $(parent),
         els          = document.getElementsByClassName(elClass);
 
     this.perspective = function(e, el) {
-        
+
         var elX      = el.getBoundingClientRect().left,
             elY      = el.getBoundingClientRect().top,
             elWidth  = el.offsetWidth,
             elHeight = el.offsetHeight;
 
-        var mouseX = e.pageX,
-            mouseY = e.pageY;
+        var mouseX = e.clientX,
+            mouseY = e.clientY;
 
-        var valY = -( ( elWidth/2 - (mouseX - elX) ) / (elWidth/2) * intensity ),
-            valX = ( elHeight/2 - (mouseY - elY) ) / (elHeight/2) * intensity;
+        var valY   = -( ( elWidth/2 - (mouseX - elX) ) / (elWidth/2) * intensity ),
+            valX   = ( elHeight/2 - (mouseY - elY) ) / (elHeight/2) * intensity;
 
-        // Velocity(el, { rotateX: valX+'deg', rotateY: valY+'deg', }, 0);
-        el.style.transform = 'rotateX('+ valX + 'deg) rotateY(' + valY + 'deg)';
+        el.style.webkitTransform = 'rotateX('+ valX.toFixed(1) + 'deg) rotateY(' + valY.toFixed(1) + 'deg)'; // need webkit transform for this to work in safari 8
+        el.style.transform       = 'rotateX('+ valX.toFixed(1) + 'deg) rotateY(' + valY.toFixed(1) + 'deg)'; // toFixed to round decimal values
 
     }
 
-    this.reset = function(el, valX, valY) {
-
-        // start implementation of request animation frame
-        console.log(valX);
+    this.anim = function(el, valX, valY, time) {
 
         animate({
-            time: 1,  // time in seconds
+            time: time,  // time in seconds
             run: function(rate) {
-                console.log(rate);
+                el.style.webkitTransform = 'rotateX('+ rate*valX +'deg) rotateY('+ rate*valY +'deg)';
                 el.style.transform = 'rotateX('+ rate*valX +'deg) rotateY('+ rate*valY +'deg)';
             }
         });
@@ -64,11 +59,10 @@ function perspectiveHover(el, parent, intensity) {
                     remaining = end - current;
 
                 if( remaining < 60 ) {
-                    item.run(0);  //1 = progress is at 100%
+                    item.run(0);  // 1 = progress is at 100%
                     return;
 
                 } else {
-                    // var rate = 1 - remaining/duration;
                     var rate = remaining/duration;
                     item.run(rate);
                 }
@@ -76,21 +70,24 @@ function perspectiveHover(el, parent, intensity) {
             }
             step();
         }
-        // end implementation of request animation frame
-
-        // Velocity(el, { rotateX: 0, rotateY: 0, }, 250, [0.175, 0.85, 0.55, 1.2]); // Array vals are easing
     }
 
     this.getTransforms = function(el) {
 
-        var st      = window.getComputedStyle(el, null),
-            tr      = st.getPropertyValue("transform"),
-            matrix  = st.getPropertyValue("transform"),
+        var st           = window.getComputedStyle(el, null),
+            // tr           = st.getPropertyValue("transform"),
+            matrix       = st.getPropertyValue("transform"),
+            webkitMatrix = st.getPropertyValue("-webkit-transform"),
             rotateX = 0,
             rotateY = 0,
             rotateZ = 0;
 
-        if (matrix !== 'none') {
+        if (matrix !== 'none') {       
+
+            // for safari
+            if (!webkitMatrix == '') {
+                matrix = webkitMatrix;
+            }
 
             // calculate the values of the rotation
             var values      = matrix.split('(')[1].split(')')[0].split(','),
@@ -104,29 +101,18 @@ function perspectiveHover(el, parent, intensity) {
                 rotateY = b;
 
             return [rotateX, rotateY];
+            
         }
 
     }
 
-    for (var i = 0; i < parent.length; i++) {
+    $parent.on('mousemove', el, function(e){
+        self.perspective(e, this);
+    });
 
-        parent[i].addEventListener('mousemove', function(e) {
-            if ( e.target.classList.contains(elClass) ) {
-                self.perspective(e, e.target);
-            }
-        });
-
-    }
-
-    for (var i = 0; i < els.length; i++ ) {
-
-        els[i].addEventListener('mouseleave', function(){
-            // pass the x transform and y transform to reset, to animate back to 0
-            self.reset(this, self.getTransforms(this)[0], self.getTransforms(this)[1]);
-        });
-
-    }
-    
+    $parent.on('mouseleave', el, function(e){
+        self.anim(this, self.getTransforms(this)[0], self.getTransforms(this)[1], 0.3);
+    });    
 }
 
-perspectiveHover('.js-perspective-card', '.js-perspective', 10);
+perspectiveHover('.js-perspective-card', '.js-perspective', 8);

@@ -2,14 +2,12 @@ html {
   background-color: #ddd;
 }
 
-.perspective {
-  /* perspective: 800px; */
-  /* perspective-origin: top center; */
-}
-
 .perspective-card-wrap {
+    -webkit-perspective: 1000px;
     perspective: 1000px;
-    perspective-origin: top center;
+    -webkit-perspective-origin: center;
+    perspective-origin: center;
+
     display: inline-block;
 }
 .perspective-card__content {
@@ -17,8 +15,11 @@ html {
     top:2rem;
     left: 0;
     width: 100%;
-    transform: translateZ(40px);
     text-align: center;
+
+    -webkit-transform: translateZ(40px);
+    transform: translateZ(40px);
+    -moz-osx-font-smoothing: grayscale;
 }
 .perspective-card {
     width: 200px;
@@ -35,7 +36,17 @@ html {
 
     /* necessary for effect */
     position: relative;
+    
+    -webkit-transition: none;
+    -o-transition: none;
+    transition: none;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    
+    -webkit-transform: rotateX(0deg) rotateY(0deg);
+    transform: rotateX(0deg) rotateY(0deg);
+    -webkit-transform-style: preserve-3d;
     transform-style: preserve-3d;
     will-change: transform;
-
 }
+
